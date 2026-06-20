@@ -197,6 +197,22 @@ Win32Window::MessageHandler(HWND hwnd,
 
       return 0;
     }
+    case WM_GETMINMAXINFO: {
+      auto info = reinterpret_cast<MINMAXINFO*>(lparam);
+      double scale_factor = 1.0;
+      HMODULE user32 = GetModuleHandleA("user32.dll");
+      if (user32) {
+        typedef UINT(WINAPI * GetDpiForWindowFn)(HWND);
+        auto get_dpi_for_window = reinterpret_cast<GetDpiForWindowFn>(
+            GetProcAddress(user32, "GetDpiForWindow"));
+        if (get_dpi_for_window) {
+          scale_factor = get_dpi_for_window(hwnd) / 96.0;
+        }
+      }
+      info->ptMinTrackSize.x = static_cast<LONG>(450 * scale_factor);
+      info->ptMinTrackSize.y = static_cast<LONG>(600 * scale_factor);
+      return 0;
+    }
     case WM_SIZE: {
       RECT rect = GetClientArea();
       if (child_content_ != nullptr) {

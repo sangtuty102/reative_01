@@ -1,0 +1,6 @@
+{
+  "version": "1.0.1+1",
+  "url": "https://github.com/sangtuty102/reative_01/releases/download/v1.0.1/reative_setup.exe",
+  "changelog": "- Cấu hình đóng gói Inno Setup 6 thành công\n- Giới hạn kích thước tối thiểu màn hình Desktop\n- Tắt tính năng sao lưu đồng bộ trên thiết bị Mobile",
+  "sha256": "91ebe8c70b39496b09ef3d911616ecf9b32463282c0c419e61cd19913a53c541"
+}

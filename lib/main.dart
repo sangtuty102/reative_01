@@ -1,52 +1,49 @@
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'flavor_config.dart';
+import 'services/update_service.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Fallback initialization if run directly via main.dart
+  FlavorConfig.initialize(
+    flavor: Flavor.dev,
+    apiBaseUrl: 'https://api-dev.reative.com',
+    appTitle: 'Reative Dev (Fallback)',
+    primaryColor: Colors.teal,
+  );
+
+  mainCommon();
+}
+
+void mainCommon() {
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
+    final config = FlavorConfig.instance;
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: config.appTitle,
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: config.primaryColor,
+          brightness: Brightness.dark,
+        ),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: MyHomePage(title: config.appTitle),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
 
   final String title;
 
@@ -56,70 +53,312 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
+  bool _isCheckingUpdate = false;
+  double _updateProgress = 0.0;
+  bool _isDownloading = false;
+  String _downloadError = '';
+  String _appVersion = '...';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAppVersion();
+    // Check for updates silently on startup
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkUpdates(silent: true);
+    });
+  }
+
+  Future<void> _loadAppVersion() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      setState(() {
+        _appVersion = 'v${packageInfo.version}+${packageInfo.buildNumber}';
+      });
+    } catch (e) {
+      setState(() {
+        _appVersion = 'v1.0.0';
+      });
+    }
+  }
+
+  Future<void> _checkUpdates({required bool silent}) async {
+    if (_isCheckingUpdate) return;
+    setState(() {
+      _isCheckingUpdate = true;
+    });
+
+    try {
+      final updateInfo = await UpdateService.checkForUpdate();
+      if (!mounted) return;
+
+      if (updateInfo != null) {
+        _showUpdateDialog(updateInfo);
+      } else {
+        if (!silent) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Ứng dụng đã ở phiên bản mới nhất!')),
+          );
+        }
+      }
+    } catch (e) {
+      if (!silent) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi kiểm tra cập nhật: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isCheckingUpdate = false;
+        });
+      }
+    }
+  }
+
+  void _showUpdateDialog(UpdateInfo updateInfo) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: Text('Có Phiên Bản Mới! (v${updateInfo.serverVersion})'),
+              content: SizedBox(
+                width: 300,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (updateInfo.changelog.isNotEmpty) ...[
+                      const Text(
+                        'Tính năng mới:',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(updateInfo.changelog),
+                      const SizedBox(height: 16),
+                    ],
+                    if (_isDownloading) ...[
+                      const Text('Đang tải bản cập nhật...'),
+                      const SizedBox(height: 8),
+                      LinearProgressIndicator(value: _updateProgress),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${(_updateProgress * 100).toStringAsFixed(0)}%',
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ] else if (_downloadError.isNotEmpty) ...[
+                      Text(
+                        _downloadError,
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                    ] else ...[
+                      const Text('Bạn có muốn tải xuống và cài đặt bản cập nhật ngay bây giờ?'),
+                    ],
+                  ],
+                ),
+              ),
+              actions: [
+                if (!_isDownloading) ...[
+                  TextButton(
+                    onPressed: () {
+                      _downloadError = '';
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text('Bỏ qua'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      setDialogState(() {
+                        _isDownloading = true;
+                        _updateProgress = 0.0;
+                        _downloadError = '';
+                      });
+                      _startDownload(updateInfo.downloadUrl, setDialogState);
+                    },
+                    child: const Text('Cập nhật'),
+                  ),
+                ],
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _startDownload(String url, StateSetter setDialogState) {
+    UpdateService.downloadAndInstall(
+      url: url,
+      onProgress: (progress) {
+        setDialogState(() {
+          _updateProgress = progress;
+        });
+      },
+      onError: (error) {
+        setDialogState(() {
+          _isDownloading = false;
+          _downloadError = error;
+        });
+      },
+    );
+  }
 
   void _incrementCounter() {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
       _counter++;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
+    final config = FlavorConfig.instance;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+        backgroundColor: colorScheme.primaryContainer,
+        title: Text(
+          widget.title,
+          style: TextStyle(
+              color: colorScheme.onPrimaryContainer,
+              fontWeight: FontWeight.bold),
         ),
+        centerTitle: true,
+      ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      // Premium Flavor Info Card
+                      Card(
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16)),
+                        color: colorScheme.surfaceContainerHighest,
+                        child: Padding(
+                          padding: const EdgeInsets.all(20.0),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: config.primaryColor,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  'FLAVOR: ${config.flavor.name.toUpperCase()}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              _buildInfoRow(context, 'App Name:', config.appTitle),
+                              const Divider(height: 24),
+                              _buildInfoRow(
+                                  context, 'API Endpoint:', config.apiBaseUrl),
+                              const Divider(height: 24),
+                              TextButton.icon(
+                                onPressed: _isCheckingUpdate
+                                    ? null
+                                    : () => _checkUpdates(silent: false),
+                                icon: _isCheckingUpdate
+                                    ? const SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                            strokeWidth: 2),
+                                      )
+                                    : const Icon(Icons.update),
+                                label: const Text('Kiểm tra cập nhật'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 40),
+                      Text(
+                        'You have pushed the button this many times:',
+                        style: TextStyle(color: colorScheme.onSurfaceVariant),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        '$_counter',
+                        style: TextStyle(
+                          fontSize: 48,
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 40),
+                      Text(
+                        'Phiên bản hiện tại: $_appVersion',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _incrementCounter,
         tooltip: 'Increment',
+        backgroundColor: colorScheme.primaryContainer,
+        foregroundColor: colorScheme.onPrimaryContainer,
         child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(BuildContext context, String label, String value) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+            style: const TextStyle(
+              fontFamily: 'monospace',
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
+

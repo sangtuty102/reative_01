@@ -1,0 +1,47 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug DEV (Android/iOS)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main_dev.dart",
+      "args": ["--flavor", "dev"]
+    },
+    {
+      "name": "Debug UAT (Android/iOS)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main_uat.dart",
+      "args": ["--flavor", "uat"]
+    },
+    {
+      "name": "Debug PROD (Android/iOS)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main_prod.dart",
+      "args": ["--flavor", "prod"]
+    },
+    {
+      "name": "Debug DEV (Windows Desktop)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main_dev.dart",
+      "args": ["-d", "windows"]
+    },
+    {
+      "name": "Debug UAT (Windows Desktop)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main_uat.dart",
+      "args": ["-d", "windows"]
+    },
+    {
+      "name": "Debug PROD (Windows Desktop)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main_prod.dart",
+      "args": ["-d", "windows"]
+    }
+  ]
+}

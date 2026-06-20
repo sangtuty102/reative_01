@@ -1,0 +1,22 @@
+flavors:
+  dev:
+    app:
+      name: "Reative Dev"
+    android:
+      applicationId: "com.example.reative_01.dev"
+    ios:
+      bundleId: "com.example.reative_01.dev"
+  uat:
+    app:
+      name: "Reative UAT"
+    android:
+      applicationId: "com.example.reative_01.uat"
+    ios:
+      bundleId: "com.example.reative_01.uat"
+  prod:
+    app:
+      name: "Reative"
+    android:
+      applicationId: "com.example.reative_01"
+    ios:
+      bundleId: "com.example.reative_01"
