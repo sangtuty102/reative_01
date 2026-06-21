@@ -1,0 +1,15 @@
+{
+  "common": {
+    "hello": "Xin chào",
+    "error_occurred": "Đã xảy ra lỗi. Vui lòng thử lại!",
+    "loading": "Đang tải...",
+    "error": "Lỗi",
+    "success": "Thành công",
+    "cancel": "Hủy",
+    "continue": "Tiếp tục",
+    "verify": "Xác thực",
+    "skip": "Bỏ qua",
+    "update": "Cập nhật",
+    "notification": "Thông báo"
+  }
+}

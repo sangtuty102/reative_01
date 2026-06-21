@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'flavor_config.dart';
 import 'main.dart' as app;
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   FlavorConfig.initialize(
@@ -12,5 +12,5 @@ void main() {
     primaryColor: Colors.teal,
   );
   
-  app.mainCommon();
+  await app.mainCommon();
 }

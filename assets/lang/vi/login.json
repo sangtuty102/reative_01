@@ -1,0 +1,28 @@
+{
+  "login": {
+    "login": "Đăng nhập",
+    "please_enter_phone": "Vui lòng nhập số điện thoại",
+    "invalid_phone": "Số điện thoại không hợp lệ (yêu cầu từ 9 đến 11 chữ số)",
+    "please_enter_password": "Vui lòng nhập mật khẩu",
+    "password_too_short": "Mật khẩu phải chứa ít nhất 6 ký tự",
+    "login_failed": "Đăng nhập không thành công: ",
+    "forgot_password": "Quên mật khẩu?",
+    "login_subtitle": "Vui lòng đăng nhập để tiếp tục",
+    "phone_number": "Số điện thoại",
+    "password": "Mật khẩu",
+    "recover_password": "Khôi phục mật khẩu",
+    "verify_otp": "Xác thực OTP",
+    "enter_account_or_phone_prompt": "Nhập số tài khoản hoặc số điện thoại đăng ký tài khoản của bạn:",
+    "account_or_phone": "Số tài khoản / Số điện thoại",
+    "enter_otp_prompt": "Vui lòng nhập mã xác thực OTP (6 chữ số) vừa được gửi đến số điện thoại của bạn:",
+    "otp_code": "Mã OTP",
+    "please_enter_account_or_phone": "Vui lòng nhập số tài khoản hoặc số điện thoại",
+    "invalid_account_or_phone": "Số tài khoản hoặc số điện thoại không hợp lệ (yêu cầu từ 9 đến 11 chữ số)",
+    "otp_sent_to_account": "Mã OTP đã được gửi đến số đăng ký của tài khoản ",
+    "system_error_sending_otp": "Lỗi hệ thống khi gửi mã: ",
+    "please_enter_otp": "Vui lòng nhập mã OTP",
+    "otp_must_be_6_digits": "Mã OTP phải gồm 6 chữ số",
+    "otp_verified_new_password_sent": "Xác thực OTP thành công. Mật khẩu mới đã được gửi qua tin nhắn SMS!",
+    "invalid_or_expired_otp": "Mã OTP không chính xác hoặc đã hết hạn: "
+  }
+}

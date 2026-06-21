@@ -1,0 +1,15 @@
+{
+  "common": {
+    "hello": "Hello",
+    "error_occurred": "An error occurred. Please try again!",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "continue": "Continue",
+    "verify": "Verify",
+    "skip": "Skip",
+    "update": "Update",
+    "notification": "Notification"
+  }
+}
